@@ -584,33 +584,21 @@ def TropD_Metric_PSI(
         # Use Psi at the level nearest to 500 hPa
         P = Psi[..., find_nearest(lev, 500.0)]
     elif method == "Psi_300_700":
-        # Use Psi averaged between the 300 and 700 hPa level
+        #Compute the mass weighted average of Psi in between 700 and 300 hPa 
+
         layer_700_to_300 = (lev <= 700.0) & (lev >= 300.0)
         #P = np.trapz(
         #    Psi[..., layer_700_to_300] * cos_lat, lev[layer_700_to_300] * 100.0, axis=-1
         #)
 
-        #Compute the mass weighted average of Psi within the layer. 
         #As the zero crossing is the key outcome you could drop the division by the layer thickness.
-        #But cos_lat is not needed.  
-        #The integral is from 300 down to 700 and lev is from 700 up to 300.
+        #The term cos_lat is not needed.  
+        #The integral is from 300 down to 700. But lev array is from 700 up to 300.
         #Add -1 out the front to reverse the integral from 700 up to 300.
         layer_thickness = (700-300)*100. #Pa
         P = -np.trapz(Psi[:,layer_700_to_300], 
                       lev[layer_700_to_300]* 100, axis=1) / layer_thickness
-        
-        debug_plotting = True
-        if debug_plotting:
-
-            P_500 = Psi[..., find_nearest(lev, 500.0)]
-
-            plt.plot(lat,P, c='k', label='new code')
-            plt.plot(lat,P_500, c='r', label='check against 500 lev psi')            
-            plt.savefig('Plots/psi_300_700_line.png')
-            plt.legend()
-            plt.close() 
-            pdb.set_trace()        
-        
+                
     elif method == "Psi_500_Int":
         # Use integrated Psi from p=0 to level nearest to 500 hPa
         PPsi = cumtrapz(Psi * cos_lat, 100.0 * lev, axis=-1, initial=0.0)
@@ -620,19 +608,6 @@ def TropD_Metric_PSI(
         P = np.trapz(Psi * cos_lat, 100.0 * lev, axis=-1)
     else:
         raise ValueError("unrecognized method ", method)
-
-
-    debug_plotting = False
-    if debug_plotting:        
-      #quick contour plot of the mass stream function  
-      X, Y = np.meshgrid(lat,lev)
-      plt.contourf(X,Y, Psi.T, levels=20, cmap="viridis")
-      plt.gca().invert_yaxis()
-      plt.colorbar(label="Value")
-
-      plt.savefig('Plots/psi.png')
-      plt.close()
-
 
     # define regions of interest
     subpolar_boundary = 30.0
@@ -644,7 +619,6 @@ def TropD_Metric_PSI(
 
     # 1. Find latitude of maximal (minimal) tropical Psi in the  (SH)
     Pmax_lat_masked = TropD_Calculate_MaxLat(P[..., subpolar_mask], lat[subpolar_mask])
-
     # 2. Find latitude of minimal (maximal) subtropical Psi in the  (SH)
     # poleward of tropical max (min)
     # define region poleward and Psi in region
@@ -664,30 +638,7 @@ def TropD_Metric_PSI(
         Phi = TropD_Calculate_ZeroCrossing(
             Plat_in_between, lat_masked, lat_uncertainty=lat_uncertainty
         )
-    pdb.set_trace()
-    test_code = False
-    if test_code:
-          #print('NH: ', LmaxNH_improved, LminNH)                         
-          #print('SH: ', LmaxSH_improved, LminSH)                         
 
-          #print('PSI: ', PhiNH, PhiSH)      
-          #print('PhiITCZ', PhiITCZ)
-
-          plt.plot(lat,P)
-          plt.plot(lat,np.ones(len(lat)))  
-          plt.plot([Phi,LmaxNH],[P.min(),P.max()], label='LmaxNH_improved')
-          plt.plot([LminNH,LminNH],[P.min(),P.max()], label='LminNH')
-          plt.plot([LmaxSH_improved,LmaxSH_improved],[P.min(),P.max()], label='LmaxSH_improved')
-          plt.plot([LminSH,LminSH],[P.min(),P.max()], label='LminSH')
-          plt.scatter(PhiNH,0, marker='x', label='PhiNH')
-          plt.scatter(PhiSH,0,marker='x', label='PhiSH')
-          plt.scatter(PhiITCZ,0,marker='x', label='PhiITCZ')      
-          plt.legend()
-          plt.savefig('Plots/psi_method.png')
-          plt.close()
-          pdb.set_trace()    
-    
-    
     return Phi
 
 
