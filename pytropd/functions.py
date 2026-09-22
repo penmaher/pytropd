@@ -7,6 +7,10 @@ import numpy as np
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 
+
+import matplotlib.pyplot as plt
+import pdb
+
 EARTH_RADIUS = 6371220.0
 GRAV = 9.80616
 GAS_CONSTANT_DRY = 287.04
@@ -167,6 +171,13 @@ def TropD_Calculate_MaxLat(
     else:
         # weighted integral to account for discrete grid
         Ymax = np.trapz((F**n) * lat, lat, axis=-1) / np.trapz(F**n, lat, axis=-1)
+
+    #plt.plot(lat,F)
+    #plt.savefig('Plots/find_ymax_2.png')
+    #plt.close()  
+    #pdb.set_trace()
+
+    #pdb.set_trace()
 
     return Ymax
 
